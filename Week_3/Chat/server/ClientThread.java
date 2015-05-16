@@ -1,6 +1,7 @@
 package Homework.Week_3.Chat.server;
 
 
+import Homework.Week_3.Chat.Message;
 import Homework.Week_3.Chat.Observer;
 import Homework.Week_3.Chat.Subject;
 
@@ -33,14 +34,19 @@ public class ClientThread implements Observer, Runnable {
             out.close();
             in.close();
             clientSocket.close();
+            subject.removeObserver(this, new Message(name + " just left the chat."));
+            String message = String.format("Client ip %s, port %s is disconnected\n",
+                    clientSocket.getInetAddress(),
+                    clientSocket.getPort());
+            System.out.println(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void update(String string) {
-        out.println(string);
+    public void update(Message message) {
+        out.println(message);
     }
 
     @Override
@@ -51,11 +57,6 @@ public class ClientThread implements Observer, Runnable {
             out.println("Please type your name: ");
             while ((s = in.readLine()) != null) {
                 if (s.equals("!QUIT")) {
-                    subject.removeObserver(this, name + " just left the chat.");
-                    String message = String.format("Client ip %s, port %s is disconnected\n",
-                            clientSocket.getInetAddress(),
-                            clientSocket.getPort());
-                    System.out.println(message);
                     break;
                 }
                 if (name == null) {
@@ -64,14 +65,14 @@ public class ClientThread implements Observer, Runnable {
                     } else {
                         name = s;
                     }
-                    subject.notifyObservers(this, name + " just joined the chat");
-                    subject.registerObserver(this, "Welcome, " + name);
+                    subject.notifyObservers(this, new Message(name + " just joined the chat"));
+                    subject.registerObserver(this, new Message("Welcome, " + name));
                     String message = String.format("New client connection ip %s, port %s\n",
                             clientSocket.getInetAddress(),
                             clientSocket.getPort());
                     System.out.println(message);
                 } else {
-                    subject.notifyObservers(this, name + ": " + s);
+                    subject.notifyObservers(this, new Message(name + ": " + s));
                 }
 
             }

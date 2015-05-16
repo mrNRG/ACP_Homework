@@ -1,5 +1,6 @@
 package Homework.Week_3.Chat.server;
 
+import Homework.Week_3.Chat.Message;
 import Homework.Week_3.Chat.Observer;
 import Homework.Week_3.Chat.Subject;
 
@@ -12,6 +13,7 @@ import java.util.List;
 public class ChatServer implements Subject {
 
     private ServerSocket serverSocket = null;
+    private LogObserver log;
     private boolean connected = false;
     private int port = 0;
     private List<Observer> clients = null;
@@ -28,6 +30,7 @@ public class ChatServer implements Subject {
         try {
             serverSocket = new ServerSocket(port);
             connected = true;
+            log = new LogObserver("log.txt");
             while (serverSocket.isBound() && connected) {
                 Socket clientSocket = serverSocket.accept();
                 new ClientThread(this, clientSocket);
@@ -37,46 +40,32 @@ public class ChatServer implements Subject {
         }
     }
 
-    public void disconnect() {
-        if (connected) {
-            connected = false;
-            for (Observer observer : clients) {
-                ClientThread client = (ClientThread) observer;
-                client.disconnect();
-                clients.remove(observer);
-            }
-            try {
-                serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     @Override
-    public void registerObserver(Observer observer, String string) {
+    public void registerObserver(Observer observer, Message message) {
         clients.add(observer);
-        observer.update(string);
+        observer.update(message);
     }
 
     @Override
-    public void removeObserver(Observer observer, String string) {
+    public void removeObserver(Observer observer, Message message) {
+        log.update(message);
         ClientThread client = (ClientThread) observer;
-        observer.update("Good bye, " + client.name + ", have a nice day!!!");
+        observer.update(new Message("Good bye, " + client.name + ", have a nice day!!!"));
         clients.remove(observer);
         for (Observer ob : clients) {
-            ob.update(string);
+            ob.update(message);
         }
 
     }
 
     @Override
-    public void notifyObservers(Observer observer, String string) {
+    public void notifyObservers(Observer observer, Message message) {
+        log.update(message);
         for (Observer ob : clients) {
             if (ob != observer) {
-                ob.update(string);
+                ob.update(message);
             }
         }
-
     }
 }
